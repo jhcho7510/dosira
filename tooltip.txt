@@ -1,0 +1,107 @@
+
+1. IntelliJ mvn : 'mvn' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다.
+    - https://jaimemin.tistory.com/2037
+
+2. 기타
+서버기동시키기
+    - mvn spring-boot:run -Dspring-boot.run.jvmArguments='-Dserver.port=9003'
+	- mvn spring-boot:run <- random port로 지정하면, 명령어 짧아짐
+    - mvn clean compile package
+	- java -jar -Dserver.port=9092 ./target/user-service-0.0.1-SNAPSHOT.jar(second-service-0.0.1-SNAPSHOT.jar)
+
+
+## MSA 프로젝트 공부 ##
+1. Eureka 서버를 기동한다. 
+    1-1. mvn spring-boot:run <-- 랜덤포트일때 (PS C:\workspace\discoveryservice>mvn spring-boot:run )
+	아니면 아래와 같이 실행해야함
+	java -jar -Dserver.port=9092 ./target/user-service-0.0.1-SNAPSHOT.jar
+
+2. 기타
+  . ModelMapper를 사용할때.. 대상 DTO와 VO에 @Builder가 어느 한쪽에만 있는경우 오류가 발생할 수 있다.
+  
+  
+## KAFKA 기동
+1. zookeeper 기동
+  - PS C:\work\kafka_2.13-2.7.0> .\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
+2. kafka 기동
+  - PS C:\work\kafka_2.13-2.7.0> .\bin\windows\kafka-server-start.bat .\config\server.properties   
+3. topic 생성
+  - c:\work\kafka_2.13-2.7.0>.\bin\windows\kafka-topics.bat --create --bootstrap-server localhost:9092 --topic quickstart-events partitions 1
+4. topic 확인
+  - [일반확인] c:\work\kafka_2.13-2.7.0>.\bin\windows\kafka-topics.bat --list --bootstrap-server localhost:9092
+  - [상세확인] c:\work\kafka_2.13-2.7.0>.\bin\windows\kafka-topics.bat --bootstrap-server localhost:9092 --describe --topic dotori-topic
+5. producer 기동
+  - PS C:\work\kafka_2.13-2.7.0> ./bin/windows/kafka-console-producer.bat --broker-list localhost:9092 --topic quickstart-events  
+6. consumer 기동
+  - PS C:\work\kafka_2.13-2.7.0> .\bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic my_topic_users \ --from-beginning  
+
+
+## KAFKA Connector 기동
+1. KAFKA Connector 기동
+  - PS C:\work\confluent-7.0.0> .\bin\windows\connect-distributed.bat .\etc\kafka\connect-distributed.properties
+. 오류 발생..   
+  - https://velog.io/@ililil9482/Kafka-Connect  
+. KAFKA 다운로드
+  - https://packages.confluent.io/archive/
+  
+  
+## KAFKA Connector Source  
+. Connector Source 추가
+: "incrementing.column.name" : "ID", --> 컬럼명 대소문자 가린다.
+	POST
+	{
+		"name" : "my-source-connect",
+		"config" : {
+					"connector.class" : "io.confluent.connect.jdbc.JdbcSourceConnector",
+					"connection.url":"jdbc:mysql://localhost:3306/mydb",
+					"connection.user":"root",
+					"connection.password":"test1357",
+					"mode": "incrementing",
+					"incrementing.column.name" : "ID",
+					"table.whitelist":"users",
+					"topic.prefix" : "my_topic_",
+					"tasks.max" : "1"
+		}
+	}
+.Connector 삭제
+	DELETE - localhost:8083/connectors/my-source-connect
+	
+.Connector 조회
+    GET - localhost:8083/connectors/my-source-connect/status
+	
+
+## KAFKA Connector SINK
+{
+	"name":"my-sink-connect",
+	"config":{
+		"connector.class":"io.confluent.connect.jdbc.JdbcSinkConnector",
+		"connection.url":"jdbc:mysql://localhost:3306/mydb",
+		"connection.user":"root",
+		"connection.password":"test1357",
+		"auto.create":"true",
+		"auto.evolve":"true",
+		"delete.enabled":"false",
+		"tasks.max":"1",
+		"topics":"my_topic_users"
+	}
+}
+  
+  
+  
+  
+## JDBC Connector 설치
+  - https://docs.confluent.io/5.5.1/connect/kafka-connect-jdbc/index.html
+
+  - confluentinc-kafka-connect-jdbc-10.0.1.zip   
+  
+  
+
+  
+## MariaDB
+1. 관리자 권한으로 console 창 실행
+2. C:\work\mariadb-10.10.2-winx64>.\bin\mariadb-install-db.exe --datadir=C:\work\mariadb-10.10.2-winx64\data --service=mariaDB --port=3306 --password=test1357
+
+
+## Maven Build tip
+  . 테스트파일 SKIP 하고 clean, compile, package 모두 하기 
+   C:\workspace\user-service> mvn clean compile package -DskipTests=true 
